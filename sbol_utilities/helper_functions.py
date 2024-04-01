@@ -364,3 +364,20 @@ def is_circular(obj: Union[sbol3.Component, sbol3.LocalSubComponent, sbol3.Exter
     :return: true if circular
     """    
     return any(n==sbol3.SO_CIRCULAR for n in obj.types)
+ 
+def is_composite(obj):
+    def has_dna_type(o):
+        return any(tyto.SO.DNA == tyto.SO.get_uri_by_term(t) for t in o.types)
+
+    def has_assembly_plan(o):
+        if not hasattr(o, "generated_by"):
+            return False
+        for activity_ref in o.generated_by:
+            activity = activity_ref.lookup()
+            if activity and 'http://sbols.org/v3#assemblyPlan' in activity.types and 'sbol:design' in activity.types:
+                return True
+        return False
+
+    if isinstance(obj, sbol3.Component):
+        return has_dna_type(obj) and has_assembly_plan(obj)
+    return False
